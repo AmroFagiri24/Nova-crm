@@ -175,3 +175,37 @@ def update_user(uid):
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
+
+from firebase_admin import auth, firestore
+
+# ... (your existing routes) ...
+
+@app.route('/api/agents', methods=['POST'])
+def create_agent():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role', 'Cold Caller')
+
+    try:
+        # 1. Create the user in Firebase Auth
+        user = auth.create_user(
+            email=email,
+            password=password
+        )
+        
+        # 2. Add custom claims for role-based access
+        auth.set_custom_user_claims(user.uid, {'role': role})
+
+        # 3. Save the user profile to Firestore
+        db = firestore.client()
+        db.collection('users').document(user.uid).set({
+            'email': email,
+            'role': role,
+            'createdAt': firestore.SERVER_TIMESTAMP
+        })
+
+        return jsonify({"message": "Agent created successfully", "uid": user.uid}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

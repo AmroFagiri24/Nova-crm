@@ -13,3 +13,11 @@ export async function api(path, { method = "GET", body } = {}) {
   if (!res.ok) throw new Error(data.error || "Request failed");
   return data;
 }
+
+export async function createAgentAccount(email, password, role) {
+  const response = await api('/api/agents', {
+    method: 'POST',
+    body: { email, password, role }
+  });
+  return response.uid;
+}
